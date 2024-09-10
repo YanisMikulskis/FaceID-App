@@ -7,13 +7,12 @@ import os
 from face_db import *
 from typing import Callable, Union
 #находим в библиотеке cv2 файл aarcascade_frontalface_alt2.xml с каскадами Хаара
-# cascPathfaceHaar = os.path.dirname(cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
-cascPathLBP = os.path.dirname(cv2.__file__) + "/data/lbpcascade_frontalface.xml"
-print(cascPathLBP)
+cascPathfaceHaar = os.path.dirname(cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
+# cascPathLBP = os.path.dirname(cv2.__file__) + "/data/lbpcascade_frontalface.xml"
+
 #загружаем найденный файлик в каскадный классификатор
-# faceCascade = cv2.CascadeClassifier(cascPathfaceHaar)
-faceCascade = cv2.CascadeClassifier(cascPathLBP)
-print(faceCascade)
+faceCascade = cv2.CascadeClassifier(cascPathfaceHaar)
+# faceCascade = cv2.CascadeClassifier(cascPathLBP)
 #сохраняем в переменную лица в файле pickle открывая его на чтение
 # with open('face_enc', 'rb') as face_pickley:
 #     data = pickle.loads(face_pickley.read())
@@ -39,14 +38,14 @@ while cv2.waitKey(1) < 0:
 
 
     #faces - это список с параметрами всех обнаруженных лиц на сером кадре
-    # faces = faceCascade.detectMultiScale(gray,
-    #                                      scaleFactor=1.1,
-    #                                      minNeighbors=5,
-    #                                      minSize=(60,60),
-    #                                      flags=cv2.CASCADE_SCALE_IMAGE) # для HAAR
     faces = faceCascade.detectMultiScale(gray,
                                          scaleFactor=1.1,
-                                         minNeighbors=5) #для LBP
+                                         minNeighbors=5,
+                                         minSize=(60,60),
+                                         flags=cv2.CASCADE_SCALE_IMAGE) # для HAAR
+    # faces = faceCascade.detectMultiScale(gray,
+    #                                      scaleFactor=1.1,
+    #                                      minNeighbors=5) #для LBP
 
     #делаем кадр из BGR цветным (RGB)
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -66,42 +65,42 @@ while cv2.waitKey(1) < 0:
 
 # ---------
     # нужно избавиться, поэтому через лямбду извлекаем нулевой(и единственный) элемент кортежа)
-    # numpy_faces = list(map(lambda x: x[0], db_session.query(Faces.code_face).all()))
+    numpy_faces = list(map(lambda x: x[0], db_session.query(Faces.code_face).all()))
     # # и теперь через лямбду "распикливаем" эмбендинги
-    # numpy_faces = list(map(lambda x: pickle.loads(x), numpy_faces))
-    # names_on_frames = []
+    numpy_faces = list(map(lambda x: pickle.loads(x), numpy_faces))
+    names_on_frames = []
 
     # без лиц в кадре этот цикл не запустится!
 #---------
-    # if encoding_camera:
-    #     for en in encoding_camera:
-    #         def matches_recursion(emb: list) -> Union[Callable, str]:
-    #             """
-    #             Рекурсивная функция проверки человека, который смотрит в камеру. Сравниваем эмбдендинг лица,
-    #             которое видит камера с эмбдендингом в базе данных (через compare_faces)
-    #             """
-    #             if not emb:
-    #                 return f'В камеру смотрит неизвестный человек!'
-    #             matches = face_recognition.compare_faces(emb[0], en)
-    #             # Если в камеру смотрит кто-то, чей эмбендинг лица близок к одному из эмбдендингов в базе. matches
-    #             # имеет вид списка с булевым значением ([True] или [False])
-    #             if matches[0]:
-    #                 # для сравнивания в запросе к БД прогоняем опять через пикли
-    #                 # (в БД эмбендинги хранятся в пикли формате)
-    #                 name_viewer = db_session.query(Faces).filter(Faces.code_face==pickle.dumps(emb[0])).first().name
-    #                 names_on_frames.append(name_viewer)
-    #                 return f'{name_viewer} смотрит в камеру'
-    #             if not matches[0]:
-    #                 return matches_recursion(emb[1:])
-    #         matches_recursion(emb=numpy_faces)
-    #         for ([x,y,w,h], name) in zip(faces, names_on_frames):
-    #             cv2.rectangle(frame, (x,y), (x + w, y + h), (0, 255, 0), 2)
-    #
-    #             cv2.putText(frame, name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,0,0), 2)
-    #
-    #
-    # else:
-    #     print(f'В камеру никто не смотрит! :(')
+    if encoding_camera:
+        for en in encoding_camera:
+            def matches_recursion(emb: list) -> Union[Callable, str]:
+                """
+                Рекурсивная функция проверки человека, который смотрит в камеру. Сравниваем эмбдендинг лица,
+                которое видит камера с эмбдендингом в базе данных (через compare_faces)
+                """
+                if not emb:
+                    return f'В камеру смотрит неизвестный человек!'
+                matches = face_recognition.compare_faces(emb[0], en)
+                # Если в камеру смотрит кто-то, чей эмбендинг лица близок к одному из эмбдендингов в базе. matches
+                # имеет вид списка с булевым значением ([True] или [False])
+                if matches[0]:
+                    # для сравнивания в запросе к БД прогоняем опять через пикли
+                    # (в БД эмбендинги хранятся в пикли формате)
+                    name_viewer = db_session.query(Faces).filter(Faces.code_face==pickle.dumps(emb[0])).first().name
+                    names_on_frames.append(name_viewer)
+                    return f'{name_viewer} смотрит в камеру'
+                if not matches[0]:
+                    return matches_recursion(emb[1:])
+            matches_recursion(emb=numpy_faces)
+            for ([x,y,w,h], name) in zip(faces, names_on_frames):
+                cv2.rectangle(frame, (x,y), (x + w, y + h), (0, 255, 0), 2)
+
+                cv2.putText(frame, name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,0,0), 2)
+
+
+    else:
+        print(f'В камеру никто не смотрит! :(')
 #-----
     cv2.imshow('NeuroFace', frame)
     # if cv2.waitKey(0):

@@ -7,9 +7,13 @@ import os
 from face_db import *
 from typing import Callable, Union
 #находим в библиотеке cv2 файл aarcascade_frontalface_alt2.xml с каскадами Хаара
-cascPathface = os.path.dirname(cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
+# cascPathfaceHaar = os.path.dirname(cv2.__file__) + "/data/haarcascade_frontalface_alt2.xml"
+cascPathLBP = os.path.dirname(cv2.__file__) + "/data/lbpcascade_frontalface.xml"
+print(cascPathLBP)
 #загружаем найденный файлик в каскадный классификатор
-faceCascade = cv2.CascadeClassifier(cascPathface)
+# faceCascade = cv2.CascadeClassifier(cascPathfaceHaar)
+faceCascade = cv2.CascadeClassifier(cascPathLBP)
+print(faceCascade)
 #сохраняем в переменную лица в файле pickle открывая его на чтение
 # with open('face_enc', 'rb') as face_pickley:
 #     data = pickle.loads(face_pickley.read())
@@ -19,6 +23,8 @@ video_capture = cv2.VideoCapture(0)
 #цикл видеопоток
 var = 0
 # w
+def encode(image):
+    return face_recognition.face_encodings(image)
 while cv2.waitKey(1) < 0:
     #захватываем кдары из видеопотока
     #ловим кадр в цикле. ret - параметр, которые имеет булево значение. True, если все ок. frame - сам кадр в видео массива numpy
@@ -30,16 +36,22 @@ while cv2.waitKey(1) < 0:
 
     #делаем кадр из BGR серым (классификатор может работать только с оттенками серого)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
     #faces - это список с параметрами всех обнаруженных лиц на сером кадре
+    # faces = faceCascade.detectMultiScale(gray,
+    #                                      scaleFactor=1.1,
+    #                                      minNeighbors=5,
+    #                                      minSize=(60,60),
+    #                                      flags=cv2.CASCADE_SCALE_IMAGE) # для HAAR
     faces = faceCascade.detectMultiScale(gray,
                                          scaleFactor=1.1,
-                                         minNeighbors=5,
-                                         minSize=(60,60),
-                                         flags=cv2.CASCADE_SCALE_IMAGE)
+                                         minNeighbors=5) #для LBP
+
     #делаем кадр из BGR цветным (RGB)
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     # создаем эмбдендинги лиц на цветном изображении
-
+    # encoding_camera = encode(rgb)
     encoding_camera = face_recognition.face_encodings(rgb)
     #
     # names = []

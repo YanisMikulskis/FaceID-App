@@ -53,21 +53,19 @@ for people_photo in imagePaths:
     boxes = face_recognition.face_locations(rgb, model='hog') #находим лица на изображении в dlib формате изображения
     encode_face = face_recognition.face_encodings(rgb, boxes) #создаем эмбендинги лиц в найденном лице на изображении
 
-    # name = re.findall(r'([^/\\]+)\.(jpg|jpeg|png|gif|bmp)$', i)
-    # print(name)
     data_faces.setdefault(name, encode_face)
     print(type(encode_face))
     print()
 
-# for name, face in data_faces.items():
-#     people = Faces(
-#         name=name,
-#         birthday = date(1995, 7, 30),
-#         code_face = pickle.dumps(face)
-#     )
-#     if not db_session.query(Faces).all():
-#         db_session.add_all([people])
-#         db_session.commit()
+for name, face in data_faces.items():
+    people = Faces(
+        name=name,
+        birthday = date(1995, 7, 30),
+        code_face = pickle.dumps(face)
+    )
+    if not db_session.query(Faces).all():
+        db_session.add_all([people])
+        db_session.commit()
 print(db_session.query(Faces).filter(Faces.code_face).all())
 
 #

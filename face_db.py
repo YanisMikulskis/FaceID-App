@@ -19,9 +19,9 @@ class Faces(Base):
     code_face = Column(BLOB, unique=True)
 
     def __repr__(self):
-        return (f'Имя человека: {self.name}'
-                f'Дата рождения: {self.birthday}'
-                f'Код лица: {self.code_face}')
+        return (f'Имя человека: {self.name}\n'
+                f'Дата рождения: {self.birthday}\n'
+                f'Код лица: {self.code_face}\n\n')
 Base.metadata.create_all(bind=engine)
 session = sessionmaker(autoflush=False, bind=engine)
 db_session = session()

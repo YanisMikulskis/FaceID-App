@@ -22,6 +22,7 @@ faceCascade = cv2.CascadeClassifier(cascPathface)
 
 # переменная захватывающая видеопоток (подключаемся к вебке)
 video_capture = cv2.VideoCapture(0)
+print(video_capture)
 # цикл видеопоток
 
 
@@ -85,7 +86,7 @@ while cv2.waitKey(1) < 0:
                     names_on_frames.append('Noname human')
                     return f'В камеру смотрит неизвестный человек!'
                 matches = face_recognition.compare_faces(emb[0], en)
-                # Если в камеру смотрит кто-то, чей эмбендинг лица близок к одному из эмбдендингов в базе. matches
+                # Если в калмеру смотрит кто-то, чей эмбендинг лица близок к одному из эмбдендингов в базе. matches
                 # имеет вид списка с булевым значением ([True] или [False])
                 if matches[0]:
                     # для сравнивания в запросе к БД прогоняем опять через пикли

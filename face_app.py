@@ -8,7 +8,10 @@
 # parser.add_argument('--test_optional', type=int, default=10, help='provide an integer(default:2)')
 # args = vars(parser.parse_args())
 # print(args)
+import sqlite3
 
+import sqlalchemy.exc
+# import sqlalchemy.exc
 #
 # ap = argparse.ArgumentParser()
 #
@@ -41,32 +44,36 @@ import os
 import re
 from face_db import *
 from datetime import date
-imagePaths = list(paths.list_images('Images'))
-knownEncodings, knownNames = [], []
-data_faces = {
 
-}
+imagePaths = list(paths.list_images('Images'))
+data_faces = dict()
 for people_photo in imagePaths:
-    name = re.findall(r'([^/\\]+)\.(jpg|jpeg|png|gif|bmp)$', people_photo)[0][0]
-    image = cv2.imread(people_photo) # загружаем изображение с помощью cv2
-    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # конвертация в dlib (RGB)
-    boxes = face_recognition.face_locations(rgb, model='hog') #находим лица на изображении в dlib формате изображения
-    encode_face = face_recognition.face_encodings(rgb, boxes) #создаем эмбендинги лиц в найденном лице на изображении
+    name = re.findall(r'([^/\\]+)\.(jpg|jpeg|png|gif|bmp|HEIC)$', people_photo)[0][0]
+    image = cv2.imread(people_photo)  # загружаем изображение с помощью cv2
+    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # конвертация в dlib (RGB)
+    boxes = face_recognition.face_locations(rgb, model='hog')  # находим лица на изображении в dlib формате изображения
+    encode_face = face_recognition.face_encodings(rgb, boxes)  # создаем эмбендинги лиц в найденном лице на изображении
 
     data_faces.setdefault(name, encode_face)
-    print(type(encode_face))
-    print()
 
 for name, face in data_faces.items():
     people = Faces(
         name=name,
-        birthday = date(1995, 7, 30),
-        code_face = pickle.dumps(face)
+        birthday=date(1995, 7, 30),
+        code_face=pickle.dumps(face)
     )
-    if not db_session.query(Faces).all():
-        db_session.add_all([people])
+    db_session.add_all([people])
+    try:
         db_session.commit()
-print(db_session.query(Faces).filter(Faces.code_face).all())
+    except sqlalchemy.exc.IntegrityError:
+        print(f'Такое лицо уже существует в базе!')
+    else:
+        print(f'Новое лицо добавлено! И это {name}')
+    db_session.rollback()
+
+    # finally:
+    #     db_session.close()
+print(db_session.query(Faces).all())
 
 #
 # test_book = Library_Flask(title='title test',
@@ -79,13 +86,8 @@ print(db_session.query(Faces).filter(Faces.code_face).all())
 # # db_session.commit()# коммитим
 
 
-
-
 # with open('face_enc', 'wb') as faces_file:
 #     faces_file.write(pickle.dumps(data_faces))
-
-
-
 
 
 # Информация для sqlalchemy
@@ -113,7 +115,6 @@ print(db_session.query(Faces).filter(Faces.code_face).all())
 #
 # db_session.add_all([new_user])
 # db_session.commit()
-
 
 
 # #вывести название книги по id в условии (может варьироваться)
@@ -186,24 +187,17 @@ print(db_session.query(Faces).filter(Faces.code_face).all())
 # #     print(i)
 
 
+# АЛЕМБИК. Чтобы эта дичь нормально работала делаем следующее:
 
-
-
-#АЛЕМБИК. Чтобы эта дичь нормально работала делаем следующее:
-
-#1. Если мы базу еще не создали. Базу мы создаем с помощью питоновского sqlite
-#Прописываем connect = sqlite3.connect('Library_Database_Flask')
+# 1. Если мы базу еще не создали. Базу мы создаем с помощью питоновского sqlite
+# Прописываем connect = sqlite3.connect('Library_Database_Flask')
 #            cursor = connect.cursor() или что то аналогичное
 
 
-
-#2. Дальше работаем уже только с помощью sqlalchemy. Подключаемся к созданной базе, делаем движок и тд(выше пример)
+# 2. Дальше работаем уже только с помощью sqlalchemy. Подключаемся к созданной базе, делаем движок и тд(выше пример)
 #   Прописываем таблицы через ООП. Каждая таблица - это модель. Прописываем все настройки.
 # Если база уже была создана, то мы делаем тоже самое, только классы таблиц будут уже не создавать таблицы, а иметь только
 # информационную пользу и будут юзаться алембиком для создания миграций. В любом случае, в них мы всегда должны описывать таблицу
-
-
-
 
 
 # 3.Устанавливаем алембик PIP
@@ -212,23 +206,20 @@ print(db_session.query(Faces).filter(Faces.code_face).all())
 # Затем создаем функцию, импортируем оставшиеся модели из модуля с таблицами SQLAlchemy и возвращаем Base
 
 
-#5. В файле env.py (который установился вместе с алембиком) прописываем:
-#Переходим в директорию с файликом session
-#Импортируем функцию, которая возвращает Base
+# 5. В файле env.py (который установился вместе с алембиком) прописываем:
+# Переходим в директорию с файликом session
+# Импортируем функцию, которая возвращает Base
 # target_metadata = наша функция().metadata
 # и больше ничего не трогаем.
 
 
-#6. В файле alembic.ini устанавливаем путь к нашей БД и прописываем настройки:
+# 6. В файле alembic.ini устанавливаем путь к нашей БД и прописываем настройки:
 # script_location = src/migrations -- создает папку для миграций
 # prepend_sys_path = . src --- переходит в созданную папку src для взаимодействия со script.py.mako и env.py
 # sqlalchemy.url = sqlite:///Library_Database_Flask -- путь к бд SQLITE3
 
 
-#7.alembic revision --message='initial' --autogenerate -- запуск тестовой миграции
+# 7.alembic revision --message='initial' --autogenerate -- запуск тестовой миграции
 # Если в ПЕРВОЙ миграции в upgrade и downgrade везде None значит все ок
-#alembic upgrade (downgrade) head -- применить самую новую(самую старую) миграции. Если нужна определенная - то вместо
+# alembic upgrade (downgrade) head -- применить самую новую(самую старую) миграции. Если нужна определенная - то вместо
 # head пишем ее номер без(_сообщения в ней)
-
-
-
